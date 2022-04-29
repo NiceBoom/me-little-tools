@@ -17,4 +17,5 @@ type Music struct {
 	CreatedAt   time.Time    `db:"created_at"`
 	UpdateAt    time.Time    `db:"updated_at"`
 	DeletedAt   sql.NullTime `db:"deleted_at"`
+	Notes       string       `db:"notes"`
 }
