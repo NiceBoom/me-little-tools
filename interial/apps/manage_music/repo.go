@@ -2,7 +2,7 @@ package manage_music
 
 import (
 	"github.com/jmoiron/sqlx"
-	"mysql/interial/apps/common/persistence"
+	"me-little-tools/interial/apps/common/persistence"
 )
 
 type Repo interface {
@@ -72,8 +72,8 @@ func (r *RepoImpl) GetMusicByStatus(status MusicStatus) (*[]Music, error) {
 }
 
 func (r *RepoImpl) CreateMusic(tx *sqlx.Tx, music *Music) error {
-	stmt := "INSERT INTO music (id, title, storage_key, type, creator_id, status, creator_at)" +
-		"VALUES (:id, :title, :storage_key, :type, :creator_id, :status, :creator_at)"
+	stmt := "INSERT INTO music (id, title, storage_key, type, creator_id, status, created_at, updated_at)" +
+		"VALUES (:id, :title, :storage_key, :type, :creator_id, :status, :created_at, :updated_at)"
 	_, err := tx.NamedExec(stmt, music)
 	return err
 }

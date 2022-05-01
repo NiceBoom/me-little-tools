@@ -3,11 +3,12 @@ package manage_music
 import (
 	"github.com/bwmarrin/snowflake"
 	"github.com/jmoiron/sqlx"
-	"mysql/interial/apps/common/storage"
+	"me-little-tools/interial/apps/common/storage"
 	"time"
 )
 
 type CreateMusicInputDto struct {
+	CreatorID      uint64
 	Title          string
 	FileContent    []byte
 	Type           MusicType
@@ -18,6 +19,12 @@ type CreateMusicOutputDto struct {
 	ID  uint64
 	Url string
 }
+
+var (
+	QiNiuAccessKey string = "D_rr0aEI9JuHRoY_T4xhdYIHhS8bgLbRqfR-Ofgp"
+	QiNiuSecretKey string = "qvptjcVO6GX2zgNhpox_8YyOc0_tVgjVTfNNs9I2"
+	QiNiuBucket    string = "nice-boom"
+)
 
 type Usecase interface {
 	CreateMusic(input *CreateMusicInputDto) (*CreateMusicOutputDto, error)
@@ -37,23 +44,24 @@ func NewUsecase(repo Repo, idGenerator *snowflake.Node) Usecase {
 	}
 }
 
-func (u *UsecaseImpl) CreateMusic(musicByte *CreateMusicInputDto) (*CreateMusicOutputDto, error) {
+func (u *UsecaseImpl) CreateMusic(musicInputDto *CreateMusicInputDto) (*CreateMusicOutputDto, error) {
 	id := uint64(u.idGenerator.Generate())
-	content := musicByte.FileContent
-	upload := storage.NewUpload()
-	fileName, err := upload.UploadMusicToQiNiu(&content)
+	content := musicInputDto.FileContent
+	upload := storage.NewUpload(QiNiuAccessKey, QiNiuSecretKey, QiNiuBucket)
+	fileName, err := upload.UploadMusicToQiNiu(&content, musicInputDto.Title, musicInputDto.CreatorID)
 	if err != nil {
 		return nil, err
 	}
 
 	music := Music{
 		ID:         id,
-		Title:      musicByte.Title,
+		Title:      musicInputDto.Title,
 		StorageKey: fileName,
-		Type:       musicByte.Type,
-		CreatorID:  007,
+		Type:       musicInputDto.Type,
+		CreatorID:  musicInputDto.CreatorID,
 		Status:     MusicStatusPending,
 		CreatedAt:  time.Now(),
+		UpdateAt:   time.Now(),
 	}
 
 	err = u.repo.WithUnitOfWork(func(tx *sqlx.Tx) error {

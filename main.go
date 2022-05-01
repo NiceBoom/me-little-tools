@@ -4,8 +4,8 @@ import (
 	"github.com/bwmarrin/snowflake"
 	"github.com/gin-gonic/gin"
 	"log"
-	"mysql/interial/apps/common/persistence"
-	"mysql/interial/apps/manage_music"
+	"me-little-tools/interial/apps/common/persistence"
+	"me-little-tools/interial/apps/manage_music"
 )
 
 func main() {
@@ -54,4 +54,5 @@ func main() {
 	usecase := manage_music.NewUsecase(repo, node)
 	musicApi := manage_music.NewApi(usecase)
 	g.POST("/upload", musicApi.UploadMusic)
+	g.Run("localhost:9090")
 }

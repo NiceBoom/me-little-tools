@@ -6,36 +6,43 @@ import (
 	"github.com/qiniu/go-sdk/v7/auth/qbox"
 	"github.com/qiniu/go-sdk/v7/sms/bytes"
 	"github.com/qiniu/go-sdk/v7/storage"
-	"mysql/interial/apps/manage_music"
+	"strconv"
 )
 
 type Upload interface {
-	UploadMusicToQiNiu(fileByte *[]byte) (string, error)
+	UploadMusicToQiNiu(fileByte *[]byte, fileName string, creatorID uint64) (string, error)
 	//UploadMusicToLocal()()
 	//UploadMusicToAli()()
 }
 
 type UploadImpl struct {
+	QiNiuAccessKey string
+	QiNiuSecretKey string
+	QiNiuBucket    string
 }
 
 var _ Upload = (*UploadImpl)(nil)
 
-func NewUpload() Upload {
-	return &UploadImpl{}
+func NewUpload(qiNiuAccessKey, qiNiuSecretKey, qiNiuBucket string) Upload {
+	return &UploadImpl{
+		QiNiuAccessKey: qiNiuAccessKey,
+		QiNiuSecretKey: qiNiuSecretKey,
+		QiNiuBucket:    qiNiuBucket,
+	}
 }
 
-func (u *UploadImpl) UploadMusicToQiNiu(fileByte *[]byte) (string, error) {
+func (u *UploadImpl) UploadMusicToQiNiu(fileByte *[]byte, fileName string, creatorId uint64) (string, error) {
 
 	fmt.Println("===========start upload music==========")
 	putPolicy := storage.PutPolicy{
-		Scope: manage_music.QiNiuBucket,
+		Scope: u.QiNiuBucket,
 	}
-	mac := qbox.NewMac(manage_music.QiNiuAccessKey, manage_music.QiNiuSecretKey)
+	mac := qbox.NewMac(u.QiNiuAccessKey, u.QiNiuSecretKey)
 	upToken := putPolicy.UploadToken(mac)
 
 	cfg := storage.Config{}
 	// 空间对应的机房
-	cfg.Zone = &storage.ZoneHuadong
+	cfg.Zone = &storage.ZoneHuabei
 	// 是否使用https域名
 	cfg.UseHTTPS = true
 	// 上传是否使用CDN上传加速
@@ -43,9 +50,12 @@ func (u *UploadImpl) UploadMusicToQiNiu(fileByte *[]byte) (string, error) {
 
 	formUploader := storage.NewFormUploader(&cfg)
 	ret := storage.PutRet{}
+	creatorIdString := strconv.FormatUint(creatorId, 10)
+
+	uploadPath := "music_upload/" + creatorIdString + "/" + fileName
 
 	dataLen := int64(len(*fileByte))
-	err := formUploader.Put(context.Background(), &ret, upToken, "", bytes.NewReader(*fileByte), dataLen, nil)
+	err := formUploader.Put(context.Background(), &ret, upToken, uploadPath, bytes.NewReader(*fileByte), dataLen, nil)
 	if err != nil {
 		fmt.Println(err)
 		return "", err
